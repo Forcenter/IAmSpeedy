@@ -1,0 +1,272 @@
+#include "SFML/Graphics.hpp"
+#include <string>
+#include <fstream>
+#include <iostream>
+
+const int storagedWords = 7;
+
+class dictionary {
+private:
+	std::string* dict;
+	int n;
+public:
+	void init(std::string file) {
+		std::ifstream fin;
+		fin.open(file);
+		fin >> n;
+
+		dict = new std::string[n];
+		for (int i = 0; i < n; ++i)
+			fin >> dict[i];
+		std::srand(std::time(NULL));
+	}
+
+	std::string generateWord() {
+		return dict[rand() % n];
+	}
+
+	~dictionary() {
+		delete[] dict;
+	}
+};
+
+class textField {
+private:
+	sf::Text insertFieldText;
+	sf::Text insertFieldTextShadow;
+	sf::RectangleShape insertField;
+	sf::Font font;
+	int n = 0;
+	int nmistake = -1;
+	std::string theString = "";
+	dictionary dict;
+	std::string words[storagedWords];
+	
+public:
+	unsigned int combo = 0;
+	textField() {
+		dict.init("dictionary.txt");
+		for (int i = 0; i < storagedWords; ++i) {
+			words[i] = dict.generateWord();
+			theString += words[i];
+			if (i != storagedWords - 1)
+				theString += ' ';
+		}
+
+		font.loadFromFile("TNR.ttf");
+		insertFieldText.setFont(font);
+		insertFieldText.setFillColor(sf::Color(244, 244, 170, 255));
+		insertFieldText.setPosition(sf::Vector2f(15, 15));
+		insertFieldText.setCharacterSize(20);
+		insertFieldText.setString("");
+
+		insertFieldTextShadow.setFont(font);
+		insertFieldTextShadow.setFillColor(sf::Color(108, 108, 108, 255));
+		insertFieldTextShadow.setPosition(sf::Vector2f(15, 15));
+		insertFieldTextShadow.setCharacterSize(20);
+		insertFieldTextShadow.setString(theString[0]);
+
+		insertField.setPosition(sf::Vector2f(10, 40));
+		insertField.setSize(sf::Vector2f(480, 1));
+		insertField.setFillColor(sf::Color(100, 100, 100, 255));
+	}
+
+	void display(sf::RenderWindow* window) {
+		window->draw(insertField);
+		if (nmistake == -1)
+			window->draw(insertFieldTextShadow);
+		window->draw(insertFieldText);
+	}
+
+	void enterNewCharacter(char a) {
+		++n;
+		insertFieldText.setString(insertFieldText.getString() + a);
+		if (theString[n - 1] == a) {
+			insertFieldTextShadow.setString(theString.substr(0, n + 1));
+		}
+		else {
+			if (nmistake == -1) {
+				nmistake = n - 1;
+				combo = 0;
+				insertFieldText.setFillColor(sf::Color::Red);
+			}
+		}
+
+		if (a == ' ' && theString[n - 1] == ' ' && nmistake == -1)
+			wordFinished();
+	}
+
+	void wordFinished() {
+		theString = theString.substr(n, theString.length() - n) + ' ' + dict.generateWord();
+		n = 0;
+		insertFieldText.setString("");
+		insertFieldTextShadow.setString(theString[0]);
+		++combo;
+	}
+
+	void deleteLastCharacter() {
+		if (n > 0) {
+			--n;
+			std::string currentString = insertFieldText.getString();
+			insertFieldText.setString(currentString.erase(currentString.length() - 1, 1));
+			if (n == nmistake) {
+				insertFieldText.setFillColor(sf::Color(244, 244, 170, 255));
+				nmistake = -1;
+			}
+		}
+	}
+
+	std::string getTheString() {
+		return theString;
+	}
+};
+
+int main() {
+	sf::RenderWindow window(sf::VideoMode(500, 200), "IAmSpeed");
+
+	textField TextField;
+
+	sf::Text text;
+	sf::Text downText;
+
+	sf::Font font;
+	font.loadFromFile("TNR.ttf");
+
+	downText.setFont(font);
+	downText.setPosition(sf::Vector2f(15, 35));
+	downText.setCharacterSize(20);
+	downText.setFillColor(sf::Color(150, 150, 150, 255));
+	downText.setString(TextField.getTheString());
+
+	text.setFont(font);
+	text.setPosition(sf::Vector2f(10, 70));
+	text.setCharacterSize(20);
+	text.setFillColor(sf::Color(244, 244, 170, 200));
+	text.setString("Combo: " + std::to_string(TextField.combo));
+
+	bool upperCase = false;
+	bool caps = false;
+
+	while (window.isOpen()) {
+		sf::Event event;
+		while (window.pollEvent(event)) {
+			if (event.type == sf::Event::Closed)
+				window.close();
+
+			if (event.type == sf::Event::KeyPressed) {
+				switch (event.key.code) {
+				case sf::Keyboard::Key::BackSpace:
+					TextField.deleteLastCharacter();
+				case sf::Keyboard::Key::LShift:
+					if (!upperCase)
+						upperCase = true;
+					break;
+				case sf::Keyboard::Key::Space:
+					TextField.enterNewCharacter(' ');
+					downText.setString(TextField.getTheString());
+					break;
+				case sf::Keyboard::Key::Q:
+					TextField.enterNewCharacter('q');
+					break;
+				case sf::Keyboard::Key::W:
+					TextField.enterNewCharacter('w');
+					break;
+				case sf::Keyboard::Key::E:
+					TextField.enterNewCharacter('e');
+					break;
+				case sf::Keyboard::Key::R:
+					TextField.enterNewCharacter('r');
+					break;
+				case sf::Keyboard::Key::T:
+					TextField.enterNewCharacter('t');
+					break;
+				case sf::Keyboard::Key::Y:
+					TextField.enterNewCharacter('y');
+					break;
+				case sf::Keyboard::Key::U:
+					TextField.enterNewCharacter('u');
+					break;
+				case sf::Keyboard::Key::I:
+					TextField.enterNewCharacter('i');
+					break;
+				case sf::Keyboard::Key::O:
+					TextField.enterNewCharacter('o');
+					break;
+				case sf::Keyboard::Key::P:
+					TextField.enterNewCharacter('p');
+					break;
+				case sf::Keyboard::Key::A:
+					TextField.enterNewCharacter('a');
+					break;
+				case sf::Keyboard::Key::S:
+					TextField.enterNewCharacter('s');
+					break;
+				case sf::Keyboard::Key::D:
+					TextField.enterNewCharacter('d');
+					break;
+				case sf::Keyboard::Key::F:
+					TextField.enterNewCharacter('f');
+					break;
+				case sf::Keyboard::Key::G:
+					TextField.enterNewCharacter('g');
+					break;
+				case sf::Keyboard::Key::H:
+					TextField.enterNewCharacter('h');
+					break;
+				case sf::Keyboard::Key::J:
+					TextField.enterNewCharacter('j');
+					break;
+				case sf::Keyboard::Key::K:
+					TextField.enterNewCharacter('k');
+					break;
+				case sf::Keyboard::Key::L:
+					TextField.enterNewCharacter('l');
+					break;
+				case sf::Keyboard::Key::Z:
+					TextField.enterNewCharacter('z');
+					break;
+				case sf::Keyboard::Key::X:
+					TextField.enterNewCharacter('x');
+					break;
+				case sf::Keyboard::Key::C:
+					TextField.enterNewCharacter('c');
+					break;
+				case sf::Keyboard::Key::V:
+					TextField.enterNewCharacter('v');
+					break;
+				case sf::Keyboard::Key::B:
+					TextField.enterNewCharacter('b');
+					break;
+				case sf::Keyboard::Key::N:
+					TextField.enterNewCharacter('n');
+					break;
+				case sf::Keyboard::Key::M:
+					TextField.enterNewCharacter('m');
+					break;
+				case sf::Keyboard::Key::End:
+					TextField.enterNewCharacter('.');
+					break;
+				case sf::Keyboard::Key::Comma:
+					TextField.enterNewCharacter(',');
+					break;
+				case sf::Keyboard::Key::Divide:
+					TextField.enterNewCharacter(':');
+					break;
+				}
+				text.setString("Combo: " + std::to_string(TextField.combo));
+			}
+
+			if (event.type == sf::Event::KeyReleased) {
+				if (event.key.code == sf::Keyboard::Key::LShift)
+					upperCase = false;
+			}
+		}
+		window.clear(sf::Color(20, 20, 20, 255));
+		TextField.display(&window);
+		window.draw(text);
+		window.draw(downText);
+		window.display();
+		sf::sleep(sf::milliseconds(20));
+	}
+	return 0;
+}
